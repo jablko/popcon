@@ -1,0 +1,14 @@
+#!/bin/bash
+
+cd "$(dirname "$BASH_SOURCE")"
+
+[ -e all-popcon-results.txt.gz ] || wget popcon.debian.org/all-popcon-results.txt.gz
+
+APTITUDE=$(aptitude -w "$(tput cols)" search "$@")
+POPCON=$(zgrep "Package: \($(echo "$APTITUDE" | cut -c 5- | awk -v 'ORS=\\|' '{ print $1 }' | head -c -2)\) " all-popcon-results.txt.gz)
+
+paste \
+  <(echo "$POPCON") \
+  <(echo "$APTITUDE" | grep "^....\($(echo "$POPCON" | awk -v 'ORS=\\|' '{ print $2 }' | head -c -2)\) ") \
+  | sort -g -k 3 \
+  | sed 's/Package: \(.*\)\t\(....\).*/\2\1/'
